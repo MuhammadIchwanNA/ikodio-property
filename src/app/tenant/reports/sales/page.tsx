@@ -8,7 +8,7 @@ import { Loader2, Download } from 'lucide-react';
 import { SummaryCards } from '@/components/SalesReport/SummaryCards';
 import { ReportFilters } from '@/components/SalesReport/ReportFilters';
 import { SalesTable } from '@/components/SalesReport/SalesTable';
-import { useSalesReport } from './UseSalesReport';
+import { useSalesReport } from './useSalesReport';
 
 export default function SalesReportPage() {
   const { data: session, status } = useSession();
