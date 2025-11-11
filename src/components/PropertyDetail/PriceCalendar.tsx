@@ -1,10 +1,17 @@
 'use client';
 
-import { useState } from 'react';
 import { Loader2, Calendar, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatPrice, formatDate } from '@/lib/utils/helpers';
+
+// Utility function for date formatting
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+};
 
 interface PriceCalendarProps {
   rooms: Array<{ id: string; name: string }>;
@@ -42,7 +49,7 @@ export function PriceCalendar({
   };
 
   return (
-    <Card className="border-0 shadow-lg bg-white overflow-hidden relative z-10">
+    <Card className="border-0 shadow-lg bg-white overflow-hidden">
       <CardHeader>
         <CardTitle className="text-2xl md:text-3xl font-bold text-slate-900">Price Calendar</CardTitle>
         <CardDescription className="text-slate-600">View daily prices and availability</CardDescription>
@@ -89,14 +96,14 @@ export function PriceCalendar({
                 <div className="w-4 h-4 bg-orange-100 border border-orange-300 rounded flex items-center justify-center">
                   <Star className="h-2 w-2 fill-orange-500 text-orange-500" />
                 </div>
-                <span className="text-slate-600">Peak Season (Higher Rate)</span>
+                <span className="text-slate-600">Peak Season</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-slate-200 border border-slate-300 rounded"></div>
                 <span className="text-slate-600">Not Available</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-100 border-2 border-blue-500 rounded"></div>
+                <div className="w-4 h-4 bg-blue-500 border-2 border-blue-600 rounded"></div>
                 <span className="text-slate-600">Selected</span>
               </div>
             </div>
@@ -108,17 +115,71 @@ export function PriceCalendar({
             ) : (
               <>
                 {/* Calendar Grid */}
-                <CalendarGrid
-                  getDaysInMonth={getDaysInMonth}
-                  calendarPrices={calendarPrices}
-                  bookingDates={bookingDates}
-                  onDateSelect={onDateSelect}
-                />
+                <div className="grid grid-cols-7 gap-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                    <div key={day} className="text-center font-bold text-sm text-slate-700 py-2">
+                      {day}
+                    </div>
+                  ))}
+                  
+                  {getDaysInMonth().map((date: Date | null, index: number) => {
+                    if (!date) return <div key={`empty-${index}`} className="aspect-square"></div>;
+                    
+                    const dateStr = date.toISOString().split('T')[0];
+                    const priceData = calendarPrices[dateStr];
+                    const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                    const isSelected = bookingDates.checkIn === dateStr || bookingDates.checkOut === dateStr;
+                    const isInRange = bookingDates.checkIn && bookingDates.checkOut && 
+                                    dateStr > bookingDates.checkIn && dateStr < bookingDates.checkOut;
+                    
+                    const isPeakSeason = priceData?.isPeak || priceData?.isPeak;
+                    
+                    let bgColor = 'bg-white border-slate-200';
+                    let textColor = 'text-slate-900';
+                    
+                    if (isPast || !priceData?.available) {
+                      bgColor = 'bg-slate-100 border-slate-300';
+                      textColor = 'text-slate-400';
+                    } else if (isSelected) {
+                      bgColor = 'bg-blue-500 border-blue-600 border-2';
+                      textColor = 'text-white';
+                    } else if (isInRange) {
+                      bgColor = 'bg-blue-100 border-blue-300';
+                      textColor = 'text-blue-900';
+                    } else if (isPeakSeason) {
+                      bgColor = 'bg-orange-50 border-orange-300';
+                      textColor = 'text-orange-900';
+                    } else if (priceData?.available) {
+                      bgColor = 'bg-green-50 border-green-300';
+                      textColor = 'text-green-900';
+                    }
+                    
+                    return (
+                      <button
+                        key={dateStr}
+                        onClick={() => !isPast && priceData?.available && onDateSelect(date)}
+                        disabled={isPast || !priceData?.available}
+                        className={`aspect-square border rounded-lg flex items-center justify-center transition-all relative ${bgColor} ${textColor} ${
+                          !isPast && priceData?.available 
+                            ? 'hover:shadow-md hover:scale-105 cursor-pointer font-semibold' 
+                            : 'cursor-not-allowed'
+                        }`}
+                      >
+                        {isPeakSeason && priceData?.available && !isSelected && (
+                          <div className="absolute top-1 right-1">
+                            <Star className="h-2.5 w-2.5 fill-orange-500 text-orange-500" />
+                          </div>
+                        )}
+                        <span className="text-base">{date.getDate()}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
                 {/* Selected Dates Info */}
                 {bookingDates.checkIn && bookingDates.checkOut && (
                   <div className="bg-slate-900 text-white p-4 rounded-xl">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
                       <div>
                         <div className="text-sm text-slate-300 mb-1">Selected Dates</div>
                         <div className="font-bold">
@@ -144,77 +205,5 @@ export function PriceCalendar({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function CalendarGrid({ 
-  getDaysInMonth, 
-  calendarPrices, 
-  bookingDates, 
-  onDateSelect 
-}: any) {
-  return (
-    <div className="grid grid-cols-7 gap-2">
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-        <div key={day} className="text-center font-bold text-sm text-slate-700 py-2">
-          {day}
-        </div>
-      ))}
-      
-      {getDaysInMonth().map((date: Date | null, index: number) => {
-        if (!date) return <div key={`empty-${index}`} className="aspect-square"></div>;
-        
-        const dateStr = date.toISOString().split('T')[0];
-        const priceData = calendarPrices[dateStr];
-        const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-        const isSelected = bookingDates.checkIn === dateStr || bookingDates.checkOut === dateStr;
-        const isInRange = bookingDates.checkIn && bookingDates.checkOut && 
-                        dateStr > bookingDates.checkIn && dateStr < bookingDates.checkOut;
-        
-        // Handle both isPeak and isPeakSeason for backward compatibility
-        const isPeakSeason = priceData?.isPeak || priceData?.isPeakSeason;
-        const price = priceData?.basePrice || priceData?.price;
-        
-        let bgColor = 'bg-white border-slate-200';
-        if (isPast || !priceData?.available) {
-          bgColor = 'bg-slate-100 border-slate-300';
-        } else if (isPeakSeason) {
-          bgColor = 'bg-orange-50 border-orange-300';
-        } else if (priceData?.available) {
-          bgColor = 'bg-green-50 border-green-300';
-        }
-        
-        if (isSelected) {
-          bgColor = 'bg-blue-100 border-blue-500 border-2';
-        } else if (isInRange) {
-          bgColor = 'bg-blue-50 border-blue-200';
-        }
-        
-        return (
-          <button
-            key={dateStr}
-            onClick={() => !isPast && priceData?.available && onDateSelect(date)}
-            disabled={isPast || !priceData?.available}
-            className={`aspect-square border rounded-lg p-1 flex flex-col items-center justify-center transition-all relative ${bgColor} ${
-              !isPast && priceData?.available 
-                ? 'hover:shadow-lg hover:scale-105 cursor-pointer' 
-                : 'cursor-not-allowed opacity-60'
-            }`}
-          >
-            {isPeakSeason && priceData?.available && (
-              <div className="absolute top-0.5 right-0.5">
-                <Star className="h-3 w-3 fill-orange-500 text-orange-500" />
-              </div>
-            )}
-            <div className="text-sm font-bold text-slate-900">{date.getDate()}</div>
-            {priceData?.available && price > 0 && (
-              <div className={`text-xs font-medium mt-0.5 ${isPeakSeason ? 'text-orange-700' : 'text-slate-700'}`}>
-                {formatPrice(price)}
-              </div>
-            )}
-          </button>
-        );
-      })}
-    </div>
   );
 }

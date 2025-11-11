@@ -550,7 +550,7 @@ export default function PropertyDetailPage({
             />
           </div>
 
-          <div className="space-y-8">
+          <div className="lg:sticky lg:top-20 space-y-8 self-start">
             <PropertySidebar property={property} />
 
             <PriceCalendar
