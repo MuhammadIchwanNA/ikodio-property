@@ -91,14 +91,14 @@ function BookingSummaryDisplay({ summary }: { summary: BookingSummary }) {
 
 function PaymentWarning() {
   return (
-    <Card className="border-2 border-yellow-500 bg-yellow-50">
+    <Card className="border-2 border-yellow-500 bg-yellow-50 shadow-md">
       <CardContent className="py-4">
         <div className="flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-yellow-900 mb-1">Payment Required</p>
             <p className="text-sm text-yellow-800">
-              You have 1 hour to upload payment proof after confirmation. Failure to do so will result in automatic booking cancellation.
+              You have <span className="font-bold">1 hour</span> to upload payment proof after confirmation. Failure to do so will result in automatic booking cancellation.
             </p>
           </div>
         </div>

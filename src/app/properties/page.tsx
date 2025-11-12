@@ -120,7 +120,7 @@ export default function PropertiesPage() {
                 <Filter className="h-4 w-4 mr-2 text-slate-500" />
                 <SelectValue placeholder="City" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border shadow-lg [&_[role=option]]:font-medium [&_[role=option]]:text-slate-900">
                 <SelectItem value="all">All Cities</SelectItem>
                 <SelectItem value="Jakarta">Jakarta</SelectItem>
                 <SelectItem value="Bandung">Bandung</SelectItem>
