@@ -3,10 +3,13 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
-  // Use getToken instead of auth() - Edge Runtime compatible
+  // IMPORTANT: Match the cookie name NextAuth uses
   const token = await getToken({ 
     req: request,
-    secret: process.env.NEXTAUTH_SECRET 
+    secret: process.env.NEXTAUTH_SECRET,
+    cookieName: process.env.NODE_ENV === 'production' 
+      ? '__Secure-next-auth.session-token'
+      : 'next-auth.session-token'
   });
   
   const { pathname } = request.nextUrl;
@@ -111,14 +114,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - uploads (upload directory)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico|uploads).*)',
   ],
 };
