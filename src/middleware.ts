@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth } from '@/lib/auth/auth.config';
+import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
-  const session = await auth();
+  // Use getToken instead of auth() - Edge Runtime compatible
+  const token = await getToken({ 
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET 
+  });
+  
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
@@ -43,7 +48,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user not logged in and trying to access protected route
-  if (!session && (isUserRoute || isTenantRoute)) {
+  if (!token && (isUserRoute || isTenantRoute)) {
     const loginUrl = isTenantRoute ? '/login-tenant' : '/login-user';
     const url = new URL(loginUrl, request.url);
     url.searchParams.set('callbackUrl', pathname);
@@ -52,9 +57,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is logged in
-  if (session && session.user) {
-    const userRole = session.user.role;
-    const isVerified = session.user.isVerified;
+  if (token) {
+    const userRole = token.role as string;
+    const isVerified = token.isVerified as boolean;
 
     // Redirect logged-in users away from login/register pages
     if (pathname === '/login-user' || pathname === '/register-user') {
