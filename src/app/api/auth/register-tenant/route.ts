@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const verificationUrl = `${process.env.APP_URL}/verify-email?token=${verificationToken}&type=tenant`;
-    
+    const verificationUrl = `${process.env.NEXTAUTH_URL}/verify-email?token=${verificationToken}&type=tenant`;
+
     await sendEmail({
       to: email,
       subject: 'Verifikasi Email Anda',
