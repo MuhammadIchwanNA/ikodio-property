@@ -116,12 +116,51 @@ export function usePaymentPage(bookingId: string) {
   };
 
   const handlePaymentSuccess = async () => {
-    toast({
-      title: 'Pembayaran Berhasil!',
-      description: 'Booking Anda telah dikonfirmasi',
-    });
-    await fetchBooking();
+  toast({
+    title: 'Pembayaran Berhasil!',
+    description: 'Menunggu konfirmasi dari server...',
+  });
+  
+  // Poll the booking status every 2 seconds for up to 20 seconds
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  const pollStatus = async (): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`);
+      if (!res.ok) return false;
+      
+      const data = await res.json();
+      const currentBooking = data.data;
+      
+      if (currentBooking.status === 'CONFIRMED' || currentBooking.status === 'COMPLETED') {
+        setBooking(currentBooking);
+        toast({
+          title: 'Booking Dikonfirmasi!',
+          description: 'Pembayaran berhasil diverifikasi',
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
   };
+  
+  // Keep checking until confirmed or timeout
+  while (attempts < maxAttempts) {
+    const isConfirmed = await pollStatus();
+    if (isConfirmed) break;
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    attempts++;
+  }
+  
+  // If still not confirmed after 20 seconds, just refresh
+  if (attempts >= maxAttempts) {
+    await fetchBooking();
+  }
+};
 
   return {
     booking,
